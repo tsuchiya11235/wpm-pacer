@@ -2,6 +2,7 @@ package com.wpmpacer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * Entry point for the wpm_pacer backend.
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * endpoint (Tess4J). The frontend (Next.js) consumes these over REST.
  */
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class WpmPacerApplication {
 
     public static void main(String[] args) {
