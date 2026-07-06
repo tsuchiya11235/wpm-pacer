@@ -32,7 +32,10 @@ public class Passage {
     @Column(name = "title", length = 120)
     private String title;
 
-    @Column(name = "content", nullable = false, columnDefinition = "text")
+    // Real PostgreSQL column is TEXT (see Flyway V1). length only affects
+    // Hibernate-generated DDL for the H2 test/quick-run profiles; validate on
+    // PostgreSQL does not enforce it.
+    @Column(name = "content", nullable = false, length = 100_000)
     private String content;
 
     @Column(name = "wpm", nullable = false)

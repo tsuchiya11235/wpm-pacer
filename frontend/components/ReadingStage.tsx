@@ -35,8 +35,10 @@ export default function ReadingStage({ text, wpm }: ReadingStageProps) {
 
   const totalWords = useMemo(() => countWords(text), [text]);
 
-  const { status, readCount, isPlaying, start, pause, reset, toggle } =
-    usePacer({ totalWords, wpm });
+  const { status, readCount, isPlaying, reset, toggle } = usePacer({
+    totalWords,
+    wpm,
+  });
 
   // Apply the selection highlight for the current read position.
   useEffect(() => {
