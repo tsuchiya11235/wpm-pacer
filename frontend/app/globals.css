@@ -187,3 +187,13 @@ a {
   transition: width 80ms linear;
 }
 
+.wpm-number {
+  width: 90px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+}
+
