@@ -1,0 +1,23 @@
+# Test configuration: self-contained in-memory H2, no external services.
+# Overrides the main application.yml on the test classpath.
+spring:
+  datasource:
+    url: jdbc:h2:mem:wpm_pacer_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+wpm-pacer:
+  cors:
+    allowed-origins: http://localhost:3000
+  ocr:
+    datapath: ./tessdata
+    language: eng
