@@ -1,4 +1,9 @@
-import type { OcrResult } from "@/lib/types";
+import type {
+  CreatePassageInput,
+  OcrResult,
+  Passage,
+  PassageSummary,
+} from "@/lib/types";
 
 const DEFAULT_BASE_URL = "http://localhost:8080";
 
@@ -68,4 +73,44 @@ export async function extractOcr(image: File): Promise<OcrResult> {
     await throwApiError(response);
   }
   return (await response.json()) as OcrResult;
+}
+
+/** Saves a passage and returns the persisted record (with generated id). */
+export async function createPassage(
+  input: CreatePassageInput,
+): Promise<Passage> {
+  const response = await safeFetch(`${getApiBaseUrl()}/api/passages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    await throwApiError(response);
+  }
+  return (await response.json()) as Passage;
+}
+
+/** Lists saved passages, newest first. */
+export async function listPassages(): Promise<PassageSummary[]> {
+  const response = await safeFetch(`${getApiBaseUrl()}/api/passages`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    await throwApiError(response);
+  }
+  return (await response.json()) as PassageSummary[];
+}
+
+/** Fetches a single passage (with full content) by id. */
+export async function getPassage(id: number): Promise<Passage> {
+  const response = await safeFetch(`${getApiBaseUrl()}/api/passages/${id}`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    await throwApiError(response);
+  }
+  return (await response.json()) as Passage;
 }
