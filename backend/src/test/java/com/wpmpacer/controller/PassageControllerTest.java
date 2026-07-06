@@ -23,6 +23,7 @@ import com.wpmpacer.dto.CreatePassageRequest;
 import com.wpmpacer.dto.PassageResponse;
 import com.wpmpacer.dto.PassageSummaryResponse;
 import com.wpmpacer.entity.SourceType;
+import com.wpmpacer.exception.ResourceNotFoundException;
 import com.wpmpacer.service.PassageService;
 
 @WebMvcTest(PassageController.class)
@@ -98,5 +99,16 @@ class PassageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(7))
                 .andExpect(jsonPath("$.content").value("content here"));
+    }
+
+    @Test
+    void getByIdReturns404WhenMissing() throws Exception {
+        given(passageService.getById(404L))
+                .willThrow(new ResourceNotFoundException("Passage not found: id=404"));
+
+        mockMvc.perform(get("/api/passages/404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Passage not found: id=404"));
     }
 }
