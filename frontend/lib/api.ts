@@ -51,7 +51,7 @@ async function throwApiError(response: Response): Promise<never> {
 async function safeFetch(input: string, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(input, init);
-  } catch (cause) {
+  } catch {
     throw new ApiError(
       "Could not reach the server. Is the backend running?",
       0,

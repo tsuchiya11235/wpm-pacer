@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ChangeEvent, type ClipboardEvent } from "react";
+import { useRef, type ChangeEvent } from "react";
 
 import { countCharacters, countWords } from "@/lib/text";
 import type { SourceType } from "@/lib/types";
@@ -32,7 +32,7 @@ export default function TextInputPanel({
     onValueChange(event.target.value, source);
   };
 
-  const handlePaste = (_event: ClipboardEvent<HTMLTextAreaElement>) => {
+  const handlePaste = () => {
     pastedRef.current = true;
   };
 
