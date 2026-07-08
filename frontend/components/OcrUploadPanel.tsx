@@ -3,6 +3,7 @@
 import Image from "next/image";
 import {
   useEffect,
+  useRef,
   useState,
   type ChangeEvent,
 } from "react";
@@ -14,18 +15,27 @@ interface OcrUploadPanelProps {
   onExtract: (text: string) => void;
 }
 
+type InputMode = "upload" | "camera";
+
 /**
- * Uploads a photo to the backend OCR endpoint and feeds the recognised text
- * back to the editable textarea. Shows a preview, a loading state during
- * extraction, and clear error messages (OCR is imperfect, so the user always
- * gets to review/correct the result upstream).
+ * Gets recognised text from a photo, either an uploaded image file or a
+ * photo taken live with the device camera. Shows a preview, a loading state
+ * during extraction, and clear error messages (OCR is imperfect, so the user
+ * always gets to review/correct the result upstream).
  */
 export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
+  const [mode, setMode] = useState<InputMode>("upload");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Keep the object URL in sync with the selected file and revoke it on change.
   useEffect(() => {
@@ -38,6 +48,54 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraActive(false);
+  };
+
+  // Release the camera whenever we leave camera mode, and on unmount.
+  useEffect(() => {
+    if (mode !== "camera") {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [mode]);
+
+  const startCamera = async () => {
+    setCameraError(null);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Camera is not available in this browser.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setCameraActive(true);
+    } catch {
+      setCameraError(
+        "Could not access the camera. Check permissions and try again.",
+      );
+    }
+  };
+
+  const handleModeChange = (next: InputMode) => {
+    setError(null);
+    setStatus(null);
+    setFile(null);
+    setMode(next);
+    if (next === "camera") {
+      void startCamera();
+    }
+  };
+
   const handleSelect = (event: ChangeEvent<HTMLInputElement>) => {
     setError(null);
     setStatus(null);
@@ -48,6 +106,44 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
       return;
     }
     setFile(selected);
+  };
+
+  const handleCapture = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.videoWidth === 0) {
+      return;
+    }
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setCameraError("Could not capture a photo. Please try again.");
+          return;
+        }
+        setError(null);
+        setStatus(null);
+        setFile(new File([blob], "camera-capture.jpg", { type: "image/jpeg" }));
+        stopCamera();
+      },
+      "image/jpeg",
+      0.92,
+    );
+  };
+
+  // Discards the captured photo and asks whether to retake it, per the
+  // product spec: a live photo is never sent for OCR without confirmation.
+  const handleRetake = () => {
+    setFile(null);
+    setError(null);
+    setStatus(null);
+    void startCamera();
   };
 
   const handleExtract = async () => {
@@ -80,14 +176,74 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
 
   return (
     <div aria-label="Extract text from image (OCR)">
-      <input
-        className="file-input"
-        type="file"
-        accept="image/*"
-        onChange={handleSelect}
-        aria-label="Choose an image"
-        disabled={loading}
-      />
+      <div className="row" style={{ marginBottom: "0.75rem" }}>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          aria-pressed={mode === "upload"}
+          onClick={() => handleModeChange("upload")}
+        >
+          Upload image
+        </button>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          aria-pressed={mode === "camera"}
+          onClick={() => handleModeChange("camera")}
+        >
+          Use camera
+        </button>
+      </div>
+
+      {mode === "upload" && (
+        <input
+          className="file-input"
+          type="file"
+          accept="image/*"
+          onChange={handleSelect}
+          aria-label="Choose an image"
+          disabled={loading}
+        />
+      )}
+
+      {mode === "camera" && (
+        <>
+          {cameraError && (
+            <p className="error" role="alert">
+              {cameraError}
+            </p>
+          )}
+          {cameraActive && !file && (
+            <div>
+              <video
+                ref={videoRef}
+                muted
+                playsInline
+                style={{
+                  width: "100%",
+                  maxHeight: 320,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  background: "#000",
+                }}
+              />
+              <div className="row" style={{ marginTop: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={handleCapture}
+                >
+                  Capture photo
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Hidden off-DOM canvas used only to grab a frame from the live video. */}
+      <canvas ref={canvasRef} style={{ display: "none" }} />
 
       {previewUrl && (
         <div style={{ marginTop: "0.75rem" }}>
@@ -109,10 +265,20 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
       )}
 
       <div className="row" style={{ marginTop: "0.75rem" }}>
+        {mode === "camera" && file && (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleRetake}
+            disabled={loading}
+          >
+            Retake
+          </button>
+        )}
         <button
           type="button"
           className="btn btn--primary"
-          onClick={handleExtract}
+          onClick={() => void handleExtract()}
           disabled={!file || loading}
         >
           {loading ? "Extracting…" : "Extract text"}

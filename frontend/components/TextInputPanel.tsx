@@ -1,17 +1,12 @@
 "use client";
 
-import { useRef, type ChangeEvent } from "react";
+import { type ChangeEvent } from "react";
 
 import { countCharacters, countWords } from "@/lib/text";
-import type { SourceType } from "@/lib/types";
 
 interface TextInputPanelProps {
   value: string;
-  /**
-   * Called whenever the text changes. `source` distinguishes typing (MANUAL)
-   * from pasting (PASTE) so the saved passage records how it was entered.
-   */
-  onValueChange: (text: string, source: SourceType) => void;
+  onValueChange: (text: string) => void;
 }
 
 /**
@@ -22,22 +17,12 @@ export default function TextInputPanel({
   value,
   onValueChange,
 }: TextInputPanelProps) {
-  // Set by the paste handler (which fires before onChange) so the change
-  // handler can attribute the update to a paste rather than typing.
-  const pastedRef = useRef(false);
-
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const source: SourceType = pastedRef.current ? "PASTE" : "MANUAL";
-    pastedRef.current = false;
-    onValueChange(event.target.value, source);
-  };
-
-  const handlePaste = () => {
-    pastedRef.current = true;
+    onValueChange(event.target.value);
   };
 
   const handleClear = () => {
-    onValueChange("", "MANUAL");
+    onValueChange("");
   };
 
   const words = countWords(value);
@@ -49,7 +34,6 @@ export default function TextInputPanel({
         className="textarea"
         value={value}
         onChange={handleChange}
-        onPaste={handlePaste}
         placeholder="Type here, or paste text from your clipboard…"
         aria-label="Reading text"
         spellCheck={false}
