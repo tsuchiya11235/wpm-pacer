@@ -26,3 +26,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 # NOTE: next-env.d.ts is intentionally tracked so `tsc --noEmit` works before a build.
+
+# --misc--
+.claude/

@@ -79,12 +79,7 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
   };
 
   return (
-    <section className="panel" aria-label="Extract text from image (OCR)">
-      <div className="panel__header">
-        <h2 className="panel__title">3. Extract from a photo (OCR)</h2>
-        <p className="panel__hint">English text in an image</p>
-      </div>
-
+    <div aria-label="Extract text from image (OCR)">
       <input
         className="file-input"
         type="file"
@@ -130,6 +125,6 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
           {error}
         </p>
       )}
-    </section>
+    </div>
   );
 }

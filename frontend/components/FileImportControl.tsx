@@ -70,12 +70,7 @@ export default function FileImportControl({
   };
 
   return (
-    <section className="panel" aria-label="Import from file">
-      <div className="panel__header">
-        <h2 className="panel__title">2. Import a .txt file</h2>
-        <p className="panel__hint">UTF-8 plain text</p>
-      </div>
-
+    <div aria-label="Import from file">
       <input
         ref={inputRef}
         className="file-input"
@@ -93,6 +88,6 @@ export default function FileImportControl({
           {error}
         </p>
       )}
-    </section>
+    </div>
   );
 }
