@@ -44,12 +44,7 @@ export default function TextInputPanel({
   const characters = countCharacters(value);
 
   return (
-    <section className="panel" aria-label="Text input">
-      <div className="panel__header">
-        <h2 className="panel__title">1. Enter text</h2>
-        <p className="panel__hint">Type or paste English text</p>
-      </div>
-
+    <div aria-label="Text input">
       <textarea
         className="textarea"
         value={value}
@@ -74,6 +69,6 @@ export default function TextInputPanel({
           Clear
         </button>
       </div>
-    </section>
+    </div>
   );
 }

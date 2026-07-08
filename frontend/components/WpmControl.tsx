@@ -22,7 +22,7 @@ const PRESETS = [200, 300, 400, 500];
 export default function WpmControl({
   value,
   onChange,
-  min = 60,
+  min = 30,
   max = 1000,
   step = 10,
 }: WpmControlProps) {

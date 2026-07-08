@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import AccordionItem from "@/components/AccordionItem";
 import FileImportControl from "@/components/FileImportControl";
 import OcrUploadPanel from "@/components/OcrUploadPanel";
 import PassageHistoryList from "@/components/PassageHistoryList";
@@ -93,18 +94,35 @@ export default function Home() {
           Read English text at your chosen words-per-minute pace, with
           progressive highlighting.
         </p>
+        <div className="page__wpm">
+          <WpmControl value={wpm} onChange={setWpm} />
+        </div>
       </header>
 
       <div className="layout">
-        <div className="layout__col">
-          <TextInputPanel value={text} onValueChange={handleTextChange} />
-          <FileImportControl
-            onImport={(imported) => handleImport(imported, "FILE")}
-          />
-          <OcrUploadPanel
-            onExtract={(extracted) => handleImport(extracted, "OCR")}
-          />
-          <WpmControl value={wpm} onChange={setWpm} />
+        <aside className="layout__col">
+          <nav className="input-menu" aria-label="Text input methods">
+            <AccordionItem
+              title="1. Enter text"
+              hint="Type or paste English text"
+              defaultOpen
+            >
+              <TextInputPanel value={text} onValueChange={handleTextChange} />
+            </AccordionItem>
+            <AccordionItem title="2. Import a .txt file" hint="UTF-8 plain text">
+              <FileImportControl
+                onImport={(imported) => handleImport(imported, "FILE")}
+              />
+            </AccordionItem>
+            <AccordionItem
+              title="3. Extract from a photo (OCR)"
+              hint="English text in an image"
+            >
+              <OcrUploadPanel
+                onExtract={(extracted) => handleImport(extracted, "OCR")}
+              />
+            </AccordionItem>
+          </nav>
 
           <section className="panel" aria-label="Save passage">
             <div className="panel__header">
@@ -137,7 +155,7 @@ export default function Home() {
               </p>
             )}
           </section>
-        </div>
+        </aside>
 
         <div className="layout__col">
           <ReadingStage text={text} wpm={wpm} />

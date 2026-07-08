@@ -4,7 +4,7 @@
 
 手入力・コピー＆ペースト・`.txt` ファイル取り込み・画像からの OCR の 4 経路でテキストを入力し、設定した速度で progressive にハイライトしながら読み進められます。読んだ文章はバックエンド（Spring Boot + PostgreSQL）に保存し、履歴から再読込できます。
 
-> ポートフォリオ用途のため、フロントエンド（Next.js / React / TypeScript）とバックエンド（Java / Spring Boot / SQL）を意図的に別スタックで構成しています。
+> フロントエンド（Next.js / React / TypeScript）とバックエンド（Java / Spring Boot / SQL）を別スタックで構成しています。
 
 ## デモの流れ（コア体験）
 
@@ -111,8 +111,10 @@ OCR（`/api/ocr`）を使う場合、Tesseract の英語モデルを配置しま
 ```bash
 # backend/tessdata/eng.traineddata を用意
 curl -L -o backend/tessdata/eng.traineddata \
-  https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
+  https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata
 ```
+
+`tessdata_best`（高精度・低速）を使用しています。速度を優先する場合は `tessdata_fast` に差し替えてください。
 
 配置先と言語は `wpm-pacer.ocr.datapath` / `wpm-pacer.ocr.language`
 （または環境変数 `WPM_PACER_OCR_DATAPATH` / `WPM_PACER_OCR_LANGUAGE`）で変更できます。
