@@ -11,18 +11,42 @@ for the full setup guide. All code, package names, and docs use `wpm_pacer`.
 ## Architecture (implemented)
 
 - **frontend/** — Next.js 14 (App Router) + React 18 + TypeScript.
-  - `app/page.tsx` orchestrates state (text, wpm, sourceType, save/history).
-  - `components/` — `TextInputPanel`, `FileImportControl`, `OcrUploadPanel`,
-    `WpmControl`, `ReadingStage`, `PassageHistoryList`.
+  - `app/page.tsx` orchestrates state (`text`, `wpm`, caret position) and wires
+    the three input methods + the WPM control + the reading stage together.
+    "Save" is a client-side "Download as .txt" of the current text — it does
+    **not** call the backend Passage API (see note below).
+  - `components/` — `AccordionItem` (generic collapsible section),
+    `TextInputPanel` (forwardRef, exposes the `<textarea>` + caret position via
+    `onCursorChange`), `FileImportControl`, `OcrUploadPanel` (file upload *or*
+    live camera capture, with a retake/confirm step before OCR), `WpmControl`
+    (30–1000 WPM, lives under the page title), `ReadingStage` (playback
+    controls + a user-selectable highlight color picker).
+  - The three input methods (`TextInputPanel`/`FileImportControl`/
+    `OcrUploadPanel`) live inside collapsible `AccordionItem` sections in a
+    sidebar (`<aside className="layout__col">`), and each inserts text at the
+    last known caret position (`insertAtCursor` in `page.tsx`) instead of
+    overwriting the textarea — existing content is never deleted by an import.
   - `lib/pacer.ts` — pure, timestamp-based pacing math (unit-tested).
   - `hooks/usePacer.ts` — rAF playback with drift-free re-anchoring on WPM change.
-  - `lib/api.ts` — backend calls; `lib/text.ts` — tokenization/counts.
-  - Progressive highlight uses the Selection API + `::selection` CSS.
+  - `lib/api.ts` — backend calls (OCR + Passage CRUD; the Passage calls are
+    currently unused by the UI, see below); `lib/text.ts` — tokenization/counts.
+  - Progressive highlight uses the Selection API + `::selection` CSS; the
+    highlight color is a CSS custom property (`--highlight-bg`) set inline by
+    `ReadingStage` from its color picker.
 - **backend/** — Spring Boot 3 (Java 17), package root `com.wpmpacer`.
   - `controller/` `service/` `repository/` `entity/` `dto/` `config/` `exception/`.
-  - Flyway migration at `src/main/resources/db/migration/V1__create_passages_table.sql`.
+  - Flyway migrations at `src/main/resources/db/migration/` (`V1` creates the
+    `passages` table; `V2` widens the WPM check constraint to 30–1500 — never
+    edit an applied migration, always add a new `Vn__...sql`).
   - PostgreSQL for dev/prod (JPA `validate`); H2 for tests and the `h2` profile.
   - OCR via Tess4J (`OcrService`) — real server-side image→text processing.
+  - **Note:** the Passage persistence API (`/api/passages`, `PassageService`,
+    the `PassageHistoryList` frontend component) is intentionally kept in the
+    codebase but is no longer called from the frontend UI — "Save" was
+    changed to a client-side `.txt` download instead of DB persistence. The
+    backend code is left in place (and still tested) specifically so the
+    SQL/JPA/Flyway work continues to demonstrate backend experience; don't
+    delete it without checking with the user first.
 
 ## Common commands
 
@@ -58,6 +82,10 @@ Health check: `GET http://localhost:8080/api/health` should return 200.
   update both together.
 - The backend base URL is configured via `NEXT_PUBLIC_API_BASE_URL`; CORS origins
   via `wpm-pacer.cors.allowed-origins`.
+- All work happens on a `feature/...` branch off `main`, opened as a PR, then
+  merged and cleaned up (branch deleted locally and on origin) — never commit
+  directly to `main`. Note GitHub does not allow a PR author to approve their
+  own PR, so review/merge is done by the repo owner via the GitHub UI.
 
 ## Project concept (from requirement.md)
 
