@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { usePacer } from "@/hooks/usePacer";
 import { countWords, tokenize } from "@/lib/text";
@@ -17,6 +17,8 @@ const STATUS_LABEL: Record<string, string> = {
   finished: "Done",
 };
 
+const DEFAULT_HIGHLIGHT_COLOR = "#facc15";
+
 /**
  * Renders the passage and progressively highlights it word-by-word at the
  * chosen WPM. Highlighting uses the native Selection API together with the
@@ -26,6 +28,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default function ReadingStage({ text, wpm }: ReadingStageProps) {
   const containerRef = useRef<HTMLParagraphElement>(null);
   const wordRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT_COLOR);
 
   const tokens = useMemo(() => {
     // Reset refs whenever the text changes so indices stay aligned.
@@ -93,6 +96,16 @@ export default function ReadingStage({ text, wpm }: ReadingStageProps) {
         >
           Reset
         </button>
+        <label className="row" style={{ gap: "0.4rem" }}>
+          <span className="counts">Highlight color</span>
+          <input
+            type="color"
+            value={highlightColor}
+            onChange={(e) => setHighlightColor(e.target.value)}
+            aria-label="Highlight color"
+            className="color-input"
+          />
+        </label>
         <span className="spacer" />
         <span className="counts">{wpm} WPM</span>
       </div>
@@ -108,7 +121,12 @@ export default function ReadingStage({ text, wpm }: ReadingStageProps) {
       </div>
 
       {hasText ? (
-        <p ref={containerRef} className="reading-stage" lang="en">
+        <p
+          ref={containerRef}
+          className="reading-stage"
+          lang="en"
+          style={{ "--highlight-bg": highlightColor } as CSSProperties}
+        >
           {tokens.map((token, i) =>
             token.isWord ? (
               <span
