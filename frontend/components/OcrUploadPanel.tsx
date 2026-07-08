@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -48,21 +49,13 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     setCameraActive(false);
-  };
+  }, []);
 
-  // Release the camera whenever we leave camera mode, and on unmount.
-  useEffect(() => {
-    if (mode !== "camera") {
-      stopCamera();
-    }
-    return () => stopCamera();
-  }, [mode]);
-
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     setCameraError(null);
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError("Camera is not available in this browser.");
@@ -84,16 +77,35 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
         "Could not access the camera. Check permissions and try again.",
       );
     }
-  };
+  }, []);
+
+  // Release the camera whenever we leave camera mode, and on unmount.
+  useEffect(() => {
+    if (mode !== "camera") {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [mode, stopCamera]);
+
+  // Start the camera whenever we're in camera mode with no photo captured
+  // yet. Driving this from an effect (rather than calling startCamera()
+  // directly from the button click) guarantees the <video> element below
+  // has already been mounted - and its ref populated - by the time the
+  // async getUserMedia() call resolves and tries to attach the stream.
+  // Calling it straight from the click handler raced the first render and
+  // silently dropped the stream (black screen until a second click, when
+  // the video element from the first attempt happened to already exist).
+  useEffect(() => {
+    if (mode === "camera" && !file && !cameraActive) {
+      void startCamera();
+    }
+  }, [mode, file, cameraActive, startCamera]);
 
   const handleModeChange = (next: InputMode) => {
     setError(null);
     setStatus(null);
     setFile(null);
     setMode(next);
-    if (next === "camera") {
-      void startCamera();
-    }
   };
 
   const handleSelect = (event: ChangeEvent<HTMLInputElement>) => {
@@ -139,11 +151,12 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
 
   // Discards the captured photo and asks whether to retake it, per the
   // product spec: a live photo is never sent for OCR without confirmation.
+  // Clearing `file` while still in camera mode re-triggers the start-camera
+  // effect above.
   const handleRetake = () => {
     setFile(null);
     setError(null);
     setStatus(null);
-    void startCamera();
   };
 
   const handleExtract = async () => {
@@ -206,40 +219,42 @@ export default function OcrUploadPanel({ onExtract }: OcrUploadPanelProps) {
         />
       )}
 
-      {mode === "camera" && (
-        <>
+      {mode === "camera" && !file && (
+        <div>
           {cameraError && (
             <p className="error" role="alert">
               {cameraError}
             </p>
           )}
-          {cameraActive && !file && (
-            <div>
-              <video
-                ref={videoRef}
-                muted
-                playsInline
-                style={{
-                  width: "100%",
-                  maxHeight: 320,
-                  objectFit: "cover",
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  background: "#000",
-                }}
-              />
-              <div className="row" style={{ marginTop: "0.75rem" }}>
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={handleCapture}
-                >
-                  Capture photo
-                </button>
-              </div>
+          <video
+            ref={videoRef}
+            muted
+            playsInline
+            style={{
+              width: "100%",
+              maxHeight: 320,
+              objectFit: "cover",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              background: "#000",
+              display: cameraActive ? "block" : "none",
+            }}
+          />
+          {!cameraActive && !cameraError && (
+            <p className="status">Starting camera…</p>
+          )}
+          {cameraActive && (
+            <div className="row" style={{ marginTop: "0.75rem" }}>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={handleCapture}
+              >
+                Capture photo
+              </button>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Hidden off-DOM canvas used only to grab a frame from the live video. */}
