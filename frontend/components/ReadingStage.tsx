@@ -51,6 +51,20 @@ export default function ReadingStage({ text, wpm }: ReadingStageProps) {
     if (!container || !selection) {
       return;
     }
+    // Don't touch the document selection while the user is focused on a
+    // text-editing control elsewhere on the page (e.g. typing in the input
+    // textarea) - doing so on every keystroke would fight the browser's own
+    // caret handling there and make that field unusable.
+    const active = document.activeElement;
+    const isEditingElsewhere =
+      active instanceof HTMLElement &&
+      active !== container &&
+      (active.tagName === "TEXTAREA" ||
+        active.tagName === "INPUT" ||
+        active.isContentEditable);
+    if (isEditingElsewhere) {
+      return;
+    }
     if (readCount <= 0) {
       selection.removeAllRanges();
       return;
