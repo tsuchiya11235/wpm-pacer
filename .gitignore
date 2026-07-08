@@ -33,3 +33,8 @@ backend/tessdata/*.traineddata
 # ---- misc ----
 *.local
 .claude/
+
+# ---- internal planning docs (not part of the shipped project) ----
+requirement.md
+CLAUDE.md
+plan_wpm_pacer.md
