@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import AccordionItem from "@/components/AccordionItem";
 import FileImportControl from "@/components/FileImportControl";
@@ -21,6 +21,43 @@ function downloadFilename(): string {
 export default function Home() {
   const [text, setText] = useState("");
   const [wpm, setWpm] = useState(DEFAULT_WPM);
+  const [pendingCursor, setPendingCursor] = useState<number | null>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Tracks the caret position so file/OCR imports insert there instead of
+  // overwriting the textarea. `null` means "no caret seen yet" -> append at
+  // the end.
+  const cursorRef = useRef<number | null>(null);
+
+  // After a programmatic insert, move the actual DOM caret to sit right
+  // after the inserted text (state updates don't do this automatically).
+  useEffect(() => {
+    if (pendingCursor === null) {
+      return;
+    }
+    textareaRef.current?.setSelectionRange(pendingCursor, pendingCursor);
+    setPendingCursor(null);
+  }, [pendingCursor]);
+
+  /**
+   * Inserts `inserted` at the last known caret position instead of
+   * replacing the textarea content, so file imports and OCR results add to
+   * (rather than delete) whatever is already there.
+   */
+  const insertAtCursor = (inserted: string) => {
+    if (!inserted) {
+      return;
+    }
+    const at =
+      cursorRef.current === null
+        ? text.length
+        : Math.min(Math.max(cursorRef.current, 0), text.length);
+    const next = text.slice(0, at) + inserted + text.slice(at);
+    const newPosition = at + inserted.length;
+    cursorRef.current = newPosition;
+    setText(next);
+    setPendingCursor(newPosition);
+  };
 
   const handleDownload = () => {
     if (text.trim().length === 0) {
@@ -59,16 +96,23 @@ export default function Home() {
               hint="Type or paste English text"
               defaultOpen
             >
-              <TextInputPanel value={text} onValueChange={setText} />
+              <TextInputPanel
+                ref={textareaRef}
+                value={text}
+                onValueChange={setText}
+                onCursorChange={(position) => {
+                  cursorRef.current = position;
+                }}
+              />
             </AccordionItem>
             <AccordionItem title="2. Import a .txt file" hint="UTF-8 plain text">
-              <FileImportControl onImport={setText} />
+              <FileImportControl onImport={insertAtCursor} />
             </AccordionItem>
             <AccordionItem
               title="3. Extract from a photo (OCR)"
               hint="Upload an image, or capture one with your camera"
             >
-              <OcrUploadPanel onExtract={setText} />
+              <OcrUploadPanel onExtract={insertAtCursor} />
             </AccordionItem>
           </nav>
 
