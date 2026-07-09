@@ -6,6 +6,12 @@
 
 > フロントエンド（Next.js / React / TypeScript）とバックエンド（Java / Spring Boot / SQL）を別スタックで構成しています。
 
+<img width="800" height="389" alt="wpm-pacer-demo" src="https://github.com/user-attachments/assets/b82f5122-b570-4680-ac3f-5280e60f2d67" />
+
+
+
+
+
 ## デモの流れ（コア体験）
 
 1. 左カラムの入力パネルで、4 経路のいずれかで英語テキストを用意する。
