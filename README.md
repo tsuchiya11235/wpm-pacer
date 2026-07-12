@@ -2,7 +2,7 @@
 
 英語文章を、選択した **WPM（words per minute）** の速さで先頭から順に着色（`::selection` によるテキスト背景の色付け）していく、リーディング・ペースメーカー Web アプリです。
 
-手入力・コピー＆ペースト・`.txt` ファイル取り込み・画像からの OCR の 4 経路でテキストを入力し、設定した速度で progressive にハイライトしながら読み進められます。読んだ文章はバックエンド（Spring Boot + PostgreSQL）に保存し、履歴から再読込できます。
+手入力・コピー＆ペースト・`.txt` ファイル取り込み・画像からの OCR の 4 経路でテキストを入力し、設定した速度で progressive にハイライトしながら読み進められます。「Save」はブラウザ上で完結する `.txt` ダウンロードで、サーバへの永続化は行いません。
 
 > フロントエンド（Next.js / React / TypeScript）とバックエンド（Java / Spring Boot / SQL）を別スタックで構成しています。
 
@@ -17,7 +17,7 @@
 1. 左カラムの入力パネルで、4 経路のいずれかで英語テキストを用意する。
 2. 「Reading speed」で WPM を設定する（再生中でも変更可）。
 3. 右カラムの「Reading stage」で **Start** を押すと、設定速度で単語が先頭から順にハイライトされる。
-4. 「Save passage」で保存 →「Saved passages」に一覧表示 → クリックで本文・WPM を復元。
+4. 「Save」で現在のテキストを `.txt` としてダウンロードできる。
 
 ## アーキテクチャ
 
@@ -31,11 +31,11 @@
 
 ```
 [Next.js :3000]  --REST/JSON, multipart-->  [Spring Boot :8080]  -->  [PostgreSQL]
-   ::selection 着色 / FileReader 取込               OCR実処理 / Passage永続化
+   ::selection 着色 / FileReader 取込 / .txt DL          OCR実処理 / Passage永続化
 ```
 
-- 着色（`::selection`）と `.txt` 取り込みはフロントエンドのみで完結（サーバ通信不要）。
-- OCR と Passage の保存・一覧・詳細はバックエンド API 経由。
+- 着色（`::selection`）・`.txt` 取り込み・`.txt` 保存はフロントエンドのみで完結（サーバ通信不要）。
+- OCR はバックエンド API 経由。
 - フロント(3000)・バック(8080)は別オリジンのため、バックエンドで CORS を許可（`wpm-pacer.cors.allowed-origins`）。
 
 ### REST API
@@ -47,6 +47,8 @@
 | GET | `/api/passages` | 一覧（新しい順、要約） |
 | GET | `/api/passages/{id}` | 詳細（本文込み） |
 | POST | `/api/ocr` | 画像から OCR 抽出（multipart, フィールド名 `image`） |
+
+> Passage API（保存・一覧・詳細）はバックエンドに実装・テスト済みだが、現在のフロントエンド UI からは呼び出していない（DB 設計・JPA・Flyway の実装力を示すために意図的にコードは残置）。
 
 ## ディレクトリ構成
 
